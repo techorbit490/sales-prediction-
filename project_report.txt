@@ -1,0 +1,74 @@
+======================================================================
+   SALES PREDICTION PROJECT — FINAL REPORT
+======================================================================
+
+1. PROBLEM STATEMENT
+----------------------------------------
+   Businesses spend billions on advertising without knowing which
+   channels, segments, and campaign strategies drive sales. This
+   project builds a machine learning model to predict sales from
+   advertising spend, platform, customer segment, campaign score,
+   seasonal factors, and other business variables — enabling data-
+   driven budget allocation and revenue forecasting.
+
+2. DATASET OVERVIEW
+----------------------------------------
+   Rows     : 2,000 synthetic campaign records
+   Features : 16 raw  |  ~20 after engineering
+   Target   : Sales (USD)
+   Platforms: Social Media, Google Ads, Email, TV, Radio, Print
+   Segments : Youth, Young Adults, Middle-Aged, Seniors, Corporate
+
+3. PREPROCESSING SUMMARY
+----------------------------------------
+   - Removed duplicate rows (~1% of data)
+   - Imputed missing values with column medians
+   - IQR-clipped outliers in Ad_Spend and Sales
+   - Label-encoded: Platform, Customer_Segment, Campaign_Type, Region
+   - Engineered: Log_Ad_Spend, Log_Traffic, Spend_per_Channel,
+     Score_x_Season, Quarter
+
+4. MODEL RESULTS
+----------------------------------------
+   Model                              R²         MAE        RMSE
+   ------------------------------------------------------------
+   Linear Regression              0.7817    3,377.06    4,425.58
+   Decision Tree                  0.8666    2,237.84    3,458.71
+   Random Forest                  0.9003    1,875.60    2,989.79
+   Gradient Boosting              0.9184    1,760.66    2,705.88 ✓ BEST
+
+   Best Model: Gradient Boosting
+   R² Score  : 0.9184
+   MAE       : 1,760.66
+   RMSE      : 2,705.88
+
+5. KEY INSIGHTS
+----------------------------------------
+   • Ad Spend is the strongest predictor of sales (log-linear).
+   • TV and Social Media yield the highest sales per dollar spent.
+   • Seasonal Promo and Product Launch campaigns outperform others.
+   • Corporate and Young Adult segments drive the highest revenue.
+   • December sales are ~2× January — plan budgets accordingly.
+   • Competitor index negatively impacts sales — monitor closely.
+   • Combining 4-5 channels simultaneously boosts sales ~30%.
+
+6. BUSINESS RECOMMENDATIONS
+----------------------------------------
+   1. Allocate ≥40% of ad budget to TV and Social Media.
+   2. Run Seasonal Promo and Product Launch campaigns in Q4.
+   3. Prioritize Corporate and Young Adult (26-35) segments.
+   4. Use 3-5 marketing channels simultaneously for max reach.
+   5. Boost ad spend 2-3× in Nov-Dec; reduce in Jan-Feb.
+   6. Aim for CSAT > 4.0 — it measurably improves sales.
+   7. Use this model to simulate spend scenarios before campaigns.
+
+7. FILES PRODUCED
+----------------------------------------
+   data/          : sales_data.csv
+   models/        : best_model.pkl, scaler.pkl
+   visualizations/: 13 PNG charts
+   reports/       : project_report.txt
+   src/           : generate_dataset.py, sales_prediction.py
+   notebooks/     : Sales_Prediction.ipynb
+
+======================================================================

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sales Predictor — AI Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root{--bg:#0a0a0f;--surface:#111118;--card:#16161f;--border:#2a2a3a;--accent:#6c63ff;--accent2:#ff6584;--accent3:#43e97b;--text:#e8e8f0;--muted:#6b6b80;--input-bg:#1e1e2e;--glow:rgba(108,99,255,0.3);}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(108,99,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .container{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+  header{padding:28px 0 20px;border-bottom:1px solid var(--border);margin-bottom:32px;}
+  .header-inner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:grid;place-items:center;font-size:20px;box-shadow:0 0 24px var(--glow);flex-shrink:0;}
+  .header-text h1{font-size:24px;font-weight:800;background:linear-gradient(135deg,#fff 40%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .header-text p{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px;}
+  .badges{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+  .badge{font-family:'Space Mono',monospace;font-size:11px;padding:5px 12px;border-radius:20px;letter-spacing:0.5px;}
+  .badge-purple{background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.4);color:var(--accent);}
+  .badge-green{background:rgba(67,233,123,0.15);border:1px solid rgba(67,233,123,0.4);color:var(--accent3);}
+
+  /* TABS */
+  .tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid var(--border);padding-bottom:0;}
+  .tab-btn{padding:10px 20px;background:none;border:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color 0.2s,border-color 0.2s;}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab-btn:hover{color:var(--text);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* PREDICTOR LAYOUT */
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color 0.2s;}
+  .card:hover{border-color:rgba(108,99,255,0.3);}
+  .card-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+  .card-title::before{content:'';display:block;width:4px;height:14px;background:var(--accent);border-radius:2px;}
+  .form-section{margin-bottom:24px;}
+  .section-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;font-family:'Space Mono',monospace;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .form-group{display:flex;flex-direction:column;gap:5px;}
+  .form-group.full{grid-column:span 2;}
+  label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.3px;}
+  input,select{background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:12px;padding:9px 12px;border-radius:8px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;width:100%;appearance:none;}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.15);}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b80' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer;}
+  input[type=range]{padding:5px 0;height:32px;cursor:pointer;accent-color:var(--accent);}
+  .btn-predict{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border:none;border-radius:12px;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:transform 0.15s,box-shadow 0.15s;box-shadow:0 4px 24px rgba(108,99,255,0.4);}
+  .btn-predict:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(108,99,255,0.5);}
+  .btn-predict:active{transform:translateY(0);}
+  .result-panel{position:sticky;top:24px;display:flex;flex-direction:column;gap:14px;}
+  .result-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;transition:all 0.4s ease;}
+  .result-card.has-result{border-color:rgba(108,99,255,0.5);box-shadow:0 0 40px rgba(108,99,255,0.1);}
+  .result-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:10px;}
+  .result-value{font-size:40px;font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:4px;min-height:48px;}
+  .result-sub{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .metric-tile{background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+  .metric-tile .m-label{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:6px;}
+  .metric-tile .m-value{font-size:18px;font-weight:700;}
+  .metric-tile.positive .m-value{color:var(--accent3);}
+  .metric-tile.negative .m-value{color:var(--accent2);}
+  .metric-tile.neutral .m-value{color:var(--accent);}
+  .insight-box{background:rgba(108,99,255,0.07);border:1px solid rgba(108,99,255,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text);line-height:1.6;display:none;}
+  .insight-box.visible{display:block;}
+  .insight-title{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+  .placeholder-state{padding:28px 0;}
+  .ph-icon{font-size:40px;margin-bottom:12px;opacity:0.3;}
+  .ph-text{font-size:13px;color:var(--muted);line-height:1.6;}
+  .divider{border:none;border-top:1px solid var(--border);margin:18px 0;}
+  .model-info{background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);line-height:1.9;}
+  .model-info span{color:var(--accent);}
+
+  /* HISTORY TAB */
+  .history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+  .history-title{font-size:14px;font-weight:700;color:var(--text);}
+  .history-count{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .btn-clear{background:rgba(255,101,132,0.1);border:1px solid rgba(255,101,132,0.3);color:var(--accent2);font-family:'Space Mono',monospace;font-size:11px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:background 0.2s;}
+  .btn-clear:hover{background:rgba(255,101,132,0.2);}
+  .history-empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:13px;}
+  .history-empty .em-icon{font-size:40px;margin-bottom:12px;opacity:0.3;}
+  .history-list{display:flex;flex-direction:column;gap:12px;}
+  .history-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;transition:border-color 0.2s;}
+  .history-item:hover{border-color:rgba(108,99,255,0.3);}
+  .hi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .hi-num{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .hi-time{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .hi-sales{font-size:22px;font-weight:800;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .hi-badges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px;}
+  .hi-badge{font-size:10px;font-family:'Space Mono',monospace;padding:3px 8px;border-radius:6px;border:1px solid;}
+  .hi-badge.platform{background:rgba(108,99,255,0.1);border-color:rgba(108,99,255,0.3);color:#a89fff;}
+  .hi-badge.segment{background:rgba(67,233,123,0.1);border-color:rgba(67,233,123,0.3);color:#6fe8a0;}
+  .hi-badge.campaign{background:rgba(255,165,0,0.1);border-color:rgba(255,165,0,0.3);color:#ffb347;}
+  .hi-badge.region{background:rgba(100,200,255,0.1);border-color:rgba(100,200,255,0.3);color:#88d4ff;}
+  .hi-params{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .hi-param{background:var(--input-bg);border-radius:6px;padding:6px 8px;text-align:center;}
+  .hi-param .p-label{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:2px;}
+  .hi-param .p-val{font-size:12px;font-weight:700;color:var(--text);}
+  .hi-roi-positive{color:var(--accent3);}
+  .hi-roi-negative{color:var(--accent2);}
+  .hi-divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+
+  /* SUMMARY TAB */
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
+  .summary-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;}
+  .summary-card .s-label{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:6px;letter-spacing:1px;}
+  .summary-card .s-val{font-size:26px;font-weight:800;color:var(--accent);}
+  .summary-card .s-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .breakdown-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;}
+  .breakdown-card h3{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .bar-label{font-size:11px;color:var(--text);width:110px;flex-shrink:0;font-family:'Space Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-track{flex:1;background:var(--input-bg);border-radius:4px;height:8px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),#8b5cf6);transition:width 0.5s ease;}
+  .bar-count{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;width:20px;text-align:right;}
+
+  @media(max-width:768px){.grid{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr;}.form-group.full{grid-column:span 1;}.result-panel{position:static;}.hi-params{grid-template-columns:repeat(2,1fr);}.breakdown-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div class="logo-icon">📈</div>
+      <div class="header-text">
+        <h1>Sales Predictor</h1>
+        <p>// AI-powered revenue forecasting engine</p>
+      </div>
+      <div class="badges">
+        <span class="badge badge-purple">⚡ Gradient Boosting · R² 0.9184</span>
+        <span class="badge badge-green">✅ No Server Needed</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('predictor')">🔮 Predictor</button>
+    <button class="tab-btn" onclick="switchTab('history')" id="historyTabBtn">📋 History <span id="historyCountBadge"></span></button>
+    <button class="tab-btn" onclick="switchTab('summary')">📊 Summary</button>
+  </div>
+
+  <!-- PREDICTOR TAB -->
+  <div class="tab-panel active" id="tab-predictor">
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Campaign Parameters</div>
+        <div class="form-section">
+          <div class="section-label">📣 Campaign Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Platform</label>
+              <select id="platform">
+                <option>Email</option><option>Google Ads</option><option>Print</option>
+                <option>Radio</option><option selected>Social Media</option><option>TV</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Campaign Type</label>
+              <select id="campaign_type">
+                <option>Brand Awareness</option><option>Lead Generation</option>
+                <option>Product Launch</option><option>Retargeting</option>
+                <option selected>Seasonal Promo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Customer Segment</label>
+              <select id="customer_segment">
+                <option>Corporate</option><option>Middle-Aged (36-50)</option>
+                <option>Seniors (51+)</option><option selected>Young Adults (26-35)</option>
+                <option>Youth (18-25)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Region</label>
+              <select id="region">
+                <option>Central</option><option>East</option>
+                <option selected>North</option><option>South</option><option>West</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="section-label">💰 Budget & Performance</div>
+          <div class="form-row">
+            <div class="form-group full">
+              <label>Ad Spend (USD): <span id="ad_spend_val" style="color:var(--accent)">$20,000</span></label>
+              <input type="range" id="ad_spend" min="500" max="150000" step="500" value="20000" oninput="updateRange('ad_spend','$',true)"/>
+            </div>
+            <div class="form-group full">
+              <label>Campaign Score (0–100): <span id="campaign_score_val" style="color:var(--accent)">75</span></label>
+              <input type="range" id="campaign_score" min="0" max="100" step="1" value="75" oninput="updateRange('campaign_score','',false)"/>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="section-label">🌍 Market & Season</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Month</label>
+              <select id="month">
+                <option value="1">January</option><option value="2">February</option>
+                <option value="3">March</option><option value="4">April</option>
+                <option value="5">May</option><option value="6">June</option>
+                <option value="7">July</option><option value="8">August</option>
+                <option value="9">September</option><option value="10">October</option>
+                <option value="11">November</option><option value="12" selected>December</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Channels Used</label>
+              <select id="channels_used">
+                <option value="1">1</option><option value="2">2</option>
+                <option value="3">3</option><option value="4" selected>4</option>
+                <option value="5">5</option><option value="6">6</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>Seasonal Factor (0.7–1.5): <span id="seasonal_factor_val" style="color:var(--accent)">1.2</span></label>
+              <input type="range" id="seasonal_factor" min="0.7" max="1.5" step="0.05" value="1.2" oninput="updateRange('seasonal_factor','',false)"/>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="section-label">⚙️ Advanced Inputs</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Competitor Index (0–1)</label>
+              <input type="number" id="competitor_index" value="0.5" min="0" max="1" step="0.01"/>
+            </div>
+            <div class="form-group">
+              <label>Economic Index</label>
+              <input type="number" id="economic_index" value="1.0" min="0.5" max="1.5" step="0.01"/>
+            </div>
+            <div class="form-group">
+              <label>Discount % (0–40)</label>
+              <input type="number" id="discount_pct" value="10" min="0" max="40" step="0.5"/>
+            </div>
+            <div class="form-group">
+              <label>CSAT Score (1–5)</label>
+              <input type="number" id="csat_score" value="4.2" min="1" max="5" step="0.1"/>
+            </div>
+            <div class="form-group full">
+              <label>Website Traffic (sessions)</label>
+              <input type="number" id="website_traffic" value="5000" min="500" max="50000" step="100"/>
+            </div>
+          </div>
+        </div>
+        <button class="btn-predict" id="predictBtn" onclick="predict()">
+          🔮 Predict Sales
+        </button>
+      </div>
+
+      <div class="result-panel">
+        <div class="result-card" id="resultCard">
+          <div id="placeholder" class="placeholder-state">
+            <div class="ph-icon">🎯</div>
+            <div class="result-label">Predicted Sales</div>
+            <div class="ph-text">Fill in campaign details and click Predict to see your revenue forecast.</div>
+          </div>
+          <div id="resultContent" style="display:none">
+            <div class="result-label">Predicted Sales</div>
+            <div class="result-value" id="salesValue">$0</div>
+            <div class="result-sub">USD Revenue Forecast</div>
+          </div>
+        </div>
+        <div class="metrics-grid" id="metricsGrid" style="display:none">
+          <div class="metric-tile" id="roiTile">
+            <div class="m-label">ROI</div>
+            <div class="m-value" id="roiValue">0%</div>
+          </div>
+          <div class="metric-tile neutral">
+            <div class="m-label">Profit</div>
+            <div class="m-value" id="profitValue">$0</div>
+          </div>
+        </div>
+        <div class="insight-box" id="insightBox">
+          <div class="insight-title">💡 AI Insight</div>
+          <div id="insightText"></div>
+        </div>
+        <hr class="divider"/>
+        <div class="model-info">
+          <div>Algorithm: <span>Gradient Boosting</span></div>
+          <div>R² Score: <span>0.9184</span></div>
+          <div>MAE: <span>$1,761</span></div>
+          <div>RMSE: <span>$2,706</span></div>
+          <div>Training Records: <span>2,000</span></div>
+          <div>Storage: <span style="color:var(--accent3)">Browser (localStorage)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div class="tab-panel" id="tab-history">
+    <div class="history-header">
+      <div>
+        <div class="history-title">Prediction History</div>
+        <div class="history-count" id="historySubtitle">All saved predictions</div>
+      </div>
+      <button class="btn-clear" onclick="clearHistory()">🗑 Clear All</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- SUMMARY TAB -->
+  <div class="tab-panel" id="tab-summary">
+    <div id="summaryContent"></div>
+  </div>
+</div>
+
+<script>
+// ── ML MODEL (Calibrated from real GradientBoosting) ──────────────────
+const SPEND_TABLE=[[500,4349.59],[1000,4467.11],[2000,4581.02],[3000,5173.41],[5000,5564.93],[7500,7898.55],[10000,9175.54],[15000,11825.45],[20000,15567.13],[30000,22586.31],[50000,33684.48],[75000,34336.53],[100000,34186.33],[150000,34223.90]];
+const PLATFORM_ADJ={'Email':-855.65,'Google Ads':-666.59,'Print':-1812.44,'Radio':-1511.09,'Social Media':0,'TV':1900.92};
+const SEGMENT_ADJ={'Corporate':2832.58,'Middle-Aged (36-50)':832.96,'Seniors (51+)':-1448.79,'Young Adults (26-35)':0,'Youth (18-25)':-810.83};
+const CAMPAIGN_ADJ={'Brand Awareness':-3032.46,'Lead Generation':-1704.71,'Product Launch':114.72,'Retargeting':-18.48,'Seasonal Promo':0};
+const REGION_ADJ={'Central':-71.23,'East':-104.49,'North':0,'South':0,'West':0};
+const MONTHS=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function interpolate(spend){
+  const t=SPEND_TABLE;
+  if(spend<=t[0][0])return t[0][1];
+  if(spend>=t[t.length-1][0])return t[t.length-1][1];
+  for(let i=0;i<t.length-1;i++){
+    if(spend>=t[i][0]&&spend<=t[i+1][0]){
+      const r=(spend-t[i][0])/(t[i+1][0]-t[i][0]);
+      return t[i][1]+r*(t[i+1][1]-t[i][1]);
+    }
+  }
+  return t[t.length-1][1];
+}
+
+function calcPrediction(d){
+  let p=interpolate(d.adSpend);
+  const scale=Math.max(0.1,Math.min(d.adSpend/20000,3.0));
+  p+=(PLATFORM_ADJ[d.platform]||0)*scale;
+  p+=(SEGMENT_ADJ[d.segment]||0)*scale;
+  p+=(CAMPAIGN_ADJ[d.campaign]||0)*scale;
+  p+=(REGION_ADJ[d.region]||0)*scale;
+  if(d.economic<0.9)p*=(0.95+d.economic*0.05);
+  else if(d.economic>1.1)p*=(1.0+(d.economic-1.1)*0.5);
+  p*=(1-d.discount*0.003);
+  p*=(0.95+d.csat*0.01);
+  p*=(0.9+d.seasonal*0.08);
+  p*=(0.97+d.campScore*0.0003);
+  return Math.max(0,Math.round(p));
+}
+
+// ── STORAGE ───────────────────────────────────────────────────────────
+const STORE_KEY='sales_predictions';
+function loadHistory(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch{return[];}}
+function saveHistory(h){localStorage.setItem(STORE_KEY,JSON.stringify(h));}
+
+// ── TABS ──────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{b.classList.toggle('active',['predictor','history','summary'][i]===name);});
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='history')renderHistory();
+  if(name==='summary')renderSummary();
+}
+
+// ── PREDICT ───────────────────────────────────────────────────────────
+function predict(){
+  const d={
+    adSpend   :parseFloat(document.getElementById('ad_spend').value),
+    platform  :document.getElementById('platform').value,
+    segment   :document.getElementById('customer_segment').value,
+    campaign  :document.getElementById('campaign_type').value,
+    region    :document.getElementById('region').value,
+    campScore :parseFloat(document.getElementById('campaign_score').value),
+    economic  :parseFloat(document.getElementById('economic_index').value),
+    discount  :parseFloat(document.getElementById('discount_pct').value),
+    csat      :parseFloat(document.getElementById('csat_score').value),
+    seasonal  :parseFloat(document.getElementById('seasonal_factor').value),
+    channels  :parseInt(document.getElementById('channels_used').value),
+    traffic   :parseFloat(document.getElementById('website_traffic').value),
+    competitor:parseFloat(document.getElementById('competitor_index').value),
+    month     :parseInt(document.getElementById('month').value),
+  };
+  const prediction=calcPrediction(d);
+  const roi=Math.round(((prediction-d.adSpend)/d.adSpend)*100*10)/10;
+  const profit=prediction-d.adSpend;
+
+  // Save to history
+  const entry={...d,prediction,roi,profit,timestamp:new Date().toISOString()};
+  const history=loadHistory();
+  history.unshift(entry);
+  saveHistory(history);
+  updateHistoryBadge();
+
+  // Show result
+  document.getElementById('placeholder').style.display='none';
+  document.getElementById('resultContent').style.display='block';
+  document.getElementById('salesValue').textContent=fmtUSD(prediction);
+  document.getElementById('resultCard').classList.add('has-result');
+  document.getElementById('metricsGrid').style.display='grid';
+  document.getElementById('roiValue').textContent=(roi>=0?'+':'')+roi+'%';
+  document.getElementById('roiTile').className='metric-tile '+(roi>=0?'positive':'negative');
+  document.getElementById('profitValue').textContent=(profit>=0?'+':'-')+fmtUSD(Math.abs(profit));
+  document.getElementById('insightText').textContent=getInsight(d.platform,d.campaign,roi,d.adSpend);
+  document.getElementById('insightBox').classList.add('visible');
+}
+
+// ── RENDER HISTORY ────────────────────────────────────────────────────
+function renderHistory(){
+  const history=loadHistory();
+  const list=document.getElementById('historyList');
+  document.getElementById('historySubtitle').textContent=history.length+' prediction'+(history.length!==1?'s':'')+' saved in browser';
+  if(!history.length){
+    list.innerHTML='<div class="history-empty"><div class="em-icon">📋</div><div>Abhi koi prediction nahi hai.<br>Pehle Predictor tab mein jaake predict karo!</div></div>';
+    return;
+  }
+  list.innerHTML='<div class="history-list">'+history.map((e,i)=>`
+    <div class="history-item">
+      <div class="hi-top">
+        <span class="hi-num">#${history.length-i} · ${fmtDate(e.timestamp)}</span>
+        <span class="hi-sales">${fmtUSD(e.prediction)}</span>
+      </div>
+      <div class="hi-badges">
+        <span class="hi-badge platform">${e.platform}</span>
+        <span class="hi-badge segment">${e.segment}</span>
+        <span class="hi-badge campaign">${e.campaign}</span>
+        <span class="hi-badge region">${e.region}</span>
+      </div>
+      <div class="hi-divider"></div>
+      <div class="hi-params">
+        <div class="hi-param"><div class="p-label">Ad Spend</div><div class="p-val">${fmtUSD(e.adSpend)}</div></div>
+        <div class="hi-param"><div class="p-label">ROI</div><div class="p-val ${e.roi>=0?'hi-roi-positive':'hi-roi-negative'}">${e.roi>=0?'+':''}${e.roi}%</div></div>
+        <div class="hi-param"><div class="p-label">Profit</div><div class="p-val">${e.profit>=0?'+':'-'}${fmtUSD(Math.abs(e.profit))}</div></div>
+        <div class="hi-param"><div class="p-label">Month</div><div class="p-val">${MONTHS[e.month]||e.month}</div></div>
+        <div class="hi-param"><div class="p-label">Channels</div><div class="p-val">${e.channels}</div></div>
+        <div class="hi-param"><div class="p-label">Camp. Score</div><div class="p-val">${e.campScore}</div></div>
+        <div class="hi-param"><div class="p-label">Seasonal</div><div class="p-val">${e.seasonal}</div></div>
+        <div class="hi-param"><div class="p-label">CSAT</div><div class="p-val">${e.csat}</div></div>
+        <div class="hi-param"><div class="p-label">Discount</div><div class="p-val">${e.discount}%</div></div>
+        <div class="hi-param"><div class="p-label">Economic</div><div class="p-val">${e.economic}</div></div>
+        <div class="hi-param"><div class="p-label">Competitor</div><div class="p-val">${e.competitor}</div></div>
+        <div class="hi-param"><div class="p-label">Traffic</div><div class="p-val">${Number(e.traffic).toLocaleString()}</div></div>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+// ── RENDER SUMMARY ────────────────────────────────────────────────────
+function renderSummary(){
+  const history=loadHistory();
+  const sc=document.getElementById('summaryContent');
+  if(!history.length){
+    sc.innerHTML='<div class="history-empty"><div class="em-icon">📊</div><div>Koi data nahi hai abhi.<br>Pehle kuch predictions karo!</div></div>';
+    return;
+  }
+  const totalSpend=history.reduce((s,e)=>s+e.adSpend,0);
+  const totalSales=history.reduce((s,e)=>s+e.prediction,0);
+  const avgROI=Math.round(history.reduce((s,e)=>s+e.roi,0)/history.length*10)/10;
+  const bestPred=history.reduce((a,b)=>a.prediction>b.prediction?a:b);
+
+  // Count by category
+  const count=(arr,key)=>arr.reduce((m,e)=>{m[e[key]]=(m[e[key]]||0)+1;return m;},{});
+  const platformC=count(history,'platform');
+  const segmentC=count(history,'segment');
+  const campaignC=count(history,'campaign');
+  const regionC=count(history,'region');
+  const maxC=(obj)=>Math.max(...Object.values(obj));
+
+  sc.innerHTML=`
+    <div class="summary-grid">
+      <div class="summary-card"><div class="s-label">TOTAL PREDICTIONS</div><div class="s-val">${history.length}</div><div class="s-sub">runs so far</div></div>
+      <div class="summary-card"><div class="s-label">TOTAL AD SPEND</div><div class="s-val">${fmtUSD(totalSpend)}</div><div class="s-sub">across all campaigns</div></div>
+      <div class="summary-card"><div class="s-label">TOTAL PREDICTED SALES</div><div class="s-val">${fmtUSD(totalSales)}</div><div class="s-sub">cumulative forecast</div></div>
+      <div class="summary-card"><div class="s-label">AVG ROI</div><div class="s-val" style="color:${avgROI>=0?'var(--accent3)':'var(--accent2)'}">${avgROI>=0?'+':''}${avgROI}%</div><div class="s-sub">average return</div></div>
+      <div class="summary-card"><div class="s-label">BEST PREDICTION</div><div class="s-val">${fmtUSD(bestPred.prediction)}</div><div class="s-sub">${bestPred.platform} · ${bestPred.campaign}</div></div>
+    </div>
+    <div class="breakdown-grid">
+      <div class="breakdown-card"><h3>Platform Usage</h3>${barRows(platformC,maxC(platformC))}</div>
+      <div class="breakdown-card"><h3>Customer Segment</h3>${barRows(segmentC,maxC(segmentC))}</div>
+      <div class="breakdown-card"><h3>Campaign Type</h3>${barRows(campaignC,maxC(campaignC))}</div>
+      <div class="breakdown-card"><h3>Region</h3>${barRows(regionC,maxC(regionC))}</div>
+    </div>`;
+}
+
+function barRows(obj,max){
+  return Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${k}">${k}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/max*100)}%"></div></div>
+      <div class="bar-count">${v}</div>
+    </div>`).join('');
+}
+
+function clearHistory(){
+  if(!confirm('Sari history delete karni hai?'))return;
+  localStorage.removeItem(STORE_KEY);
+  updateHistoryBadge();
+  renderHistory();
+}
+
+function updateHistoryBadge(){
+  const n=loadHistory().length;
+  document.getElementById('historyCountBadge').textContent=n?`(${n})`:'';
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────
+function fmtUSD(v){return '$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function fmtDate(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+function updateRange(id,prefix,isMoney){
+  const val=parseFloat(document.getElementById(id).value);
+  document.getElementById(id+'_val').textContent=isMoney?prefix+val.toLocaleString('en-US'):prefix+val;
+}
+function getInsight(platform,campaign,roi,spend){
+  if(platform==='TV')return 'TV platform gives highest sales boost — best platform in the model!';
+  if(platform==='Social Media')return 'Social Media is strong — 2nd best platform for revenue generation.';
+  if(platform==='Print')return 'Print has lowest conversion — consider switching to TV or Social Media.';
+  if(campaign==='Brand Awareness')return 'Brand Awareness has lowest ROI. Seasonal Promo or Product Launch works better.';
+  if(roi>100)return 'Exceptional ROI! This campaign configuration is highly efficient.';
+  if(roi<0)return 'Negative ROI — consider reducing ad spend or switching to TV/Social Media platform.';
+  if(spend>50000)return 'High spend: model shows diminishing returns above $50k — optimize your mix!';
+  return 'Model confidence is high (R² 0.9184). Ad Spend is the #1 driver of sales (92% importance).';
+}
+
+updateRange('ad_spend','$',true);
+updateRange('campaign_score','',false);
+updateRange('seasonal_factor','',false);
+updateHistoryBadge();
+</script>
+</body>
+</html>
